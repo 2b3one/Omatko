@@ -15,12 +15,13 @@ document.addEventListener('DOMContentLoaded', () => {
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
-        const COLORS = {
-            highlight: '#ffffff',   // Czubki kłębów
-            base: '#cbd5e1',        // Główny kolor
-            shadowLight: '#94a3b8', // Pierwszy cień
-            shadowDark: '#64748b'   // Głęboki cień na dole
+                const COLORS = {
+            highlight: '#94a3b8',   // Jasny, ołowiany szary (czubki chmur łapiące resztki światła)
+            base: '#475569',        // Ciemny, betonowy grafit (główna masa chmury)
+            shadowLight: '#334155', // Głęboki, burzowy granat/szary
+            shadowDark: '#1e293b'   // Najciemniejszy, niemal czarny spód chmury (zaraz runie ulewa)
         };
+
 
         class DetailedPixelCloud {
             constructor(isInitial = false) {
