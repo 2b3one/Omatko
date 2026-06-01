@@ -5,24 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Osiedle Misja Kontakt - LGC</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        /* Panel Canvas rozciągnięty na całe niebo */
-        #cloud-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 40vh; /* Chmury latają w górnej części ekranu */
-            z-index: 2;
-            pointer-events: none; /* Kliknięcia przechodzą pod spód na postacie */
-        }
-    </style>
 </head>
 <body>
 
 <div class="scene" id="scene"></div>
 
-<canvas id="cloud-canvas"></canvas>
+<canvas id="cloud-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 45vh; z-index: 2; pointer-events: none;"></canvas>
 
 <a href="https://youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" class="pranie pranie-1" title="Browar Tyskie"></a>
 <a href="https://youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" class="pranie pranie-2" title="Spray LGC"></a>
@@ -62,140 +50,5 @@
 </div>
 
 <script src="agent.js"></script>
-
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const canvas = document.getElementById('cloud-canvas');
-        const ctx = canvas.getContext('2d');
-
-        // Rozmiar piksela w grze (im większy, tym bardziej retro)
-        const PIXEL_SIZE = 4; 
-
-        // Dopasowanie rozmiaru płótna
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight * 0.4;
-        }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-
-        // Paleta kolorów cieniowania chmur (klasyczny retro dithering/shading)
-        const COLORS = {
-            highlight: '#ffffff', // Góra chmury (słońce)
-            base: '#e2e8f0',      // Środek
-            shadow: '#94a3b8',    // Głęboki cień na dole
-            outline: '#475569'    // Delikatny, ciemniejszy zarys (opcjonalny)
-        };
-
-        class PixelCloud {
-            constructor(isInitial = false) {
-                this.blocks = [];
-                this.width = Math.floor(Math.random() * 30) + 25; // Szerokość w jednostkach pikselowych
-                this.height = Math.floor(Math.random() * 8) + 8;   // Wysokość w jednostkach pikselowych
-                
-                this.speed = Math.random() * 0.4 + 0.2; // Prędkość zapierdalania
-                this.x = isInitial ? (Math.random() * (canvas.width + this.width * PIXEL_SIZE) - this.width * PIXEL_SIZE) : -this.width * PIXEL_SIZE;
-                this.y = Math.random() * (canvas.height - this.height * PIXEL_SIZE - 20) + 10;
-                this.opacity = Math.random() * 0.3 + 0.5; // Losowa przezroczystość dla głębi
-
-                this.generateShape();
-            }
-
-            // Budowanie organicznej struktury chmury z cieniowaniem
-            generateShape() {
-                // Generujemy mapę wysokości chmury dla góry i dołu
-                let topProfile = [];
-                let bottomProfile = [];
-                
-                let mid = Math.floor(this.width / 2);
-                
-                for(let x = 0; x < this.width; x++) {
-                    // Kształt kopułowy (wyżej na środku, niżej na brzegach)
-                    let distFromCenter = Math.abs(x - mid) / mid;
-                    let maxH = this.height * (1 - distFromCenter * distFromCenter);
-                    
-                    let t = Math.floor(this.height / 2 - (maxH / 2) + Math.sin(x * 0.5) * 1.5);
-                    let b = Math.floor(this.height / 2 + (maxH / 2) + Math.cos(x * 0.3) * 1.5);
-                    
-                    // Zabezpieczenie przed błędami indeksowania
-                    if (t < 0) t = 0;
-                    if (b >= this.height) b = this.height - 1;
-                    if (t > b) t = b;
-
-                    topProfile.push(t);
-                    bottomProfile.push(b);
-                }
-
-                // Przypisywanie kolorów (cieniowanie) każdemu pikselowi chmury
-                for (let x = 0; x < this.width; x++) {
-                    for (let y = topProfile[x]; y <= bottomProfile[x]; y++) {
-                        let color = COLORS.base;
-                        
-                        // Warstwa najwyższa = Highlight (biel)
-                        if (y === topProfile[x] || (y === topProfile[x] + 1 && Math.random() > 0.3)) {
-                            color = COLORS.highlight;
-                        } 
-                        // Warstwy najniższe = Cień (szary/niebieskawy)
-                        else if (y === bottomProfile[x] || y === bottomProfile[x] - 1 || (y === bottomProfile[x] - 2 && x % 2 === 0)) {
-                            color = COLORS.shadow;
-                        }
-
-                        this.blocks.push({ x: x, y: y, color: color });
-                    }
-                }
-            }
-
-            update() {
-                this.x += this.speed;
-            }
-
-            draw() {
-                ctx.save();
-                ctx.globalAlpha = this.opacity;
-                
-                // Wyłączamy wygładzanie krawędzi przez Canvas, żeby zachować ostry piksel
-                ctx.imageSmoothingEnabled = false;
-
-                for (let block of this.blocks) {
-                    ctx.fillStyle = block.color;
-                    // Rysujemy przeskalowane kwadraty tworzące ostateczną chmurę
-                    ctx.fillRect(
-                        Math.round(this.x + block.x * PIXEL_SIZE), 
-                        Math.round(this.y + block.y * PIXEL_SIZE), 
-                        PIXEL_SIZE, 
-                        PIXEL_SIZE
-                    );
-                }
-                ctx.restore();
-            }
-        }
-
-        // Tworzenie floty chmur
-        const cloudCount = 5;
-        let clouds = [];
-        for (let i = 0; i < cloudCount; i++) {
-            clouds.push(new PixelCloud(true));
-        }
-
-        // Pętla animacji
-        function loop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            clouds.forEach((cloud, index) => {
-                cloud.update();
-                cloud.draw();
-
-                // Restart chmury po wylocie za ekran
-                if (cloud.x > canvas.width) {
-                    clouds[index] = new PixelCloud(false);
-                }
-            });
-
-            requestAnimationFrame(loop);
-        }
-
-        loop();
-    });
-</script>
 </body>
 </html>
