@@ -5,13 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Osiedle Misja Kontakt - LGC</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Szybka poprawka w stylach dla dynamicznych chmur retro */
+        .pixel-cloud {
+            position: absolute;
+            background: #ffffff;
+            opacity: 0.35;
+            z-index: 2;
+            pointer-events: none;
+            image-rendering: pixelated;
+        }
+    </style>
 </head>
 <body>
 
 <div class="scene" id="scene"></div>
 
-<div class="cloud cloud-1"></div>
-<div class="cloud cloud-2"></div>
+<!-- Kontener, do którego skrypt będzie wrzucał chmury -->
+<div id="cloud-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 30vh; z-index: 2; pointer-events: none;"></div>
 
 <!-- INTERAKTYWNE ELEMENTY KLIKALNE -->
 <a href="https://youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" class="pranie pranie-1" title="Browar Tyskie"></a>
@@ -19,7 +30,7 @@
 <a href="https://youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" class="pranie pranie-3" title="Mikrofon Osiedle"></a>
 <a href="https://youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" class="pranie pranie-4" title="Winyl Paktofonika"></a>
 
-<!-- HOTSPOTY CZATU (Wyrównane pod grafikę tła) -->
+<!-- HOTSPOTY CZATU -->
 <div class="hotspot capy-hotspot" id="capy" title="Gadaj z kapibarą"></div>
 <div class="hotspot lgc-hotspot" id="lgc-face" title="Gadaj z LGC"></div>
 <div class="mouth" id="mouth"></div>
@@ -56,5 +67,87 @@
 </div>
 
 <script src="agent.js"></script>
+
+<!-- 🔥 GENERATOR ZAPIERDALAJĄCYCH CHMUR -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const container = document.getElementById('cloud-container');
+        const cloudCount = 6; // Ile chmur ma latać na raz
+        const clouds = [];
+
+        // Funkcja tworząca pojedynczą chmurę z losowych kwadratów (efekt pixel art)
+        function createCloud(isInitial = false) {
+            const cloudEl = document.createElement('div');
+            cloudEl.className = 'pixel-cloud';
+            
+            // Losowe wymiary bazy chmury
+            const baseWidth = Math.floor(Math.random() * 60) + 60; // 60-120px
+            const baseHeight = Math.floor(Math.random() * 20) + 20; // 20-40px
+            
+            cloudEl.style.width = baseWidth + 'px';
+            cloudEl.style.height = baseHeight + 'px';
+            
+            // Losowa pozycja startowa (jeśli inicjalna, to losowo na ekranie, jeśli nowa to za lewą krawędzią)
+            let posX = isInitial ? (Math.random() * (window.innerWidth + baseWidth) - baseWidth) : -baseWidth;
+            const posY = Math.random() * 150 + 20; // Wysokość na niebie (20-170px od góry)
+            
+            // Każda chmura zapierdala z trochę inną prędkością (od 1.5 do 4 pikseli na klatkę)
+            const speed = Math.random() * 2.5 + 1.5; 
+            
+            cloudEl.style.top = posY + 'px';
+            cloudEl.style.left = posX + 'px';
+
+            // Dodajemy losowe "pikselowe" wybrzuszenia, żeby chmura wyglądała retro, a nie jak nudny prostokąt
+            const bumps = Math.floor(Math.random() * 3) + 2;
+            for(let i = 0; i < bumps; i++) {
+                const bump = document.createElement('div');
+                bump.style.position = 'absolute';
+                bump.style.background = '#ffffff';
+                bump.style.width = (Math.floor(Math.random() * 40) + 20) + 'px';
+                bump.style.height = (Math.floor(Math.random() * 20) + 15) + 'px';
+                bump.style.top = -(Math.floor(Math.random() * 15) + 5) + 'px';
+                bump.style.left = (Math.random() * (baseWidth - 30) + 10) + 'px';
+                cloudEl.appendChild(bump);
+            }
+
+            container.appendChild(cloudEl);
+
+            return {
+                el: cloudEl,
+                x: posX,
+                speed: speed,
+                width: baseWidth
+            };
+        }
+
+        // Tworzymy pierwszą partię chmur rozrzuconych po niebie
+        for (let i = 0; i < cloudCount; i++) {
+            clouds.push(createCloud(true));
+        }
+
+        // Główna pętla animacji (czysty, wydajny JS)
+        function animateClouds() {
+            for (let i = 0; i < clouds.length; i++) {
+                const cloud = clouds[i];
+                cloud.x += cloud.speed; // Chmura leci w prawo
+                
+                // Aktualizacja pozycji na ekranie (skokowa o pełne piksele dla klimatu retro)
+                cloud.el.style.left = Math.round(cloud.x) + 'px';
+
+                // Jeśli chmura wyleci całkowicie za prawą krawędź ekranu
+                if (cloud.x > window.innerWidth) {
+                    // Usuwamy stary element z drzewa DOM
+                    cloud.el.remove();
+                    // Generujemy nową chmurę od lewej strony i podmieniamy w tablicy
+                    clouds[i] = createCloud(false);
+                }
+            }
+            requestAnimationFrame(animateClouds);
+        }
+
+        // Odpalamy zapierdalanie!
+        animateClouds();
+    });
+</script>
 </body>
 </html>
