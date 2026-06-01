@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Osiedle Misja Kontakt - LGC</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="scene" id="scene"></div>
+
+<div class="cloud cloud-1"></div>
+<div class="cloud cloud-2"></div>
+
+<!-- INTERAKTYWNE ELEMENTY KLIKALNE -->
+<a href="https://youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" class="pranie pranie-1" title="Browar Tyskie"></a>
+<a href="https://youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" class="pranie pranie-2" title="Spray LGC"></a>
+<a href="https://youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" class="pranie pranie-3" title="Mikrofon Osiedle"></a>
+<a href="https://youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" class="pranie pranie-4" title="Winyl Paktofonika"></a>
+
+<!-- HOTSPOTY CZATU (Wyrównane pod grafikę tła) -->
+<div class="hotspot capy-hotspot" id="capy" title="Gadaj z kapibarą"></div>
+<div class="hotspot lgc-hotspot" id="lgc-face" title="Gadaj z LGC"></div>
+<div class="mouth" id="mouth"></div>
+
+<!-- POPUP Z MISJAMI -->
+<div class="popup" id="popup">
+    <h2>Kroniki Częstochowy</h2>
+    <p id="story"></p>
+    <button onclick="closePopup()">Zamknij rewir</button>
+</div>
+
+<!-- DOLNE MENU (B&W) -->
+<div class="menu">
+    <div class="menu-item" id="btn-start">Start</div>
+    <div class="menu-item" id="btn-mapa">Mapa</div>
+    <div class="menu-item" id="btn-misje">Misje</div>
+    <div class="menu-item" id="btn-postacie">Postacie</div>
+    <div class="menu-item" id="btn-kontakt">Kontakt</div>
+</div>
+
+<!-- OKNO CZATU -->
+<div class="kapibara-chat" id="kapibaraChat">
+    <div class="kapibara-chat-header">
+        <strong>LGC Crew Chat</strong>
+        <span id="closeChat">✖</span>
+    </div>
+    <div class="kapibara-chat-window" id="kapibaraChatWindow">
+        <div class="msg bot">Siema mordo! Jesteśmy z kapibarą na posterunku. Pilnujemy Grosza. O co kminisz?</div>
+    </div>
+    <div class="kapibara-chat-input">
+        <input id="kapibaraInput" type="text" placeholder="Napisz coś do LGC..." autocomplete="off">
+        <button id="kapibaraSend">Wyślij</button>
+    </div>
+</div>
+
+<script src="agent.js"></script>
+</body>
+</html>
