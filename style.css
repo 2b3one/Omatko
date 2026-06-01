@@ -13,15 +13,16 @@ body {
     width: 100vw;
 }
 
-/* CANVAS DLA MINIGRY I CHMUR */
+/* CANVAS DLA MINIGRY GRY - MA BYĆ NA SAMYM WIERZCHU */
 #cloud-canvas {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 45vh;
-    z-index: 5;
+    z-index: 99999 !important; /* Absolutny priorytet nad wszystkim */
     pointer-events: auto;
+    background: transparent;
 }
 
 /* SCENA BACKGROUND */
@@ -35,14 +36,14 @@ body {
     transition: transform 0.1s ease-out;
 }
 
-/* KLASYCZNE CHMURY FALLBACK */
+/* CLOUDS FALLBACK */
 .cloud {
     position: absolute;
     background: rgba(255, 255, 255, 0.2);
     z-index: 2;
 }
 
-/* INTERAKTYWNE PRANIE */
+/* PRANIE */
 .pranie {
     position: absolute;
     cursor: pointer;
@@ -79,7 +80,7 @@ body {
     border: 4px solid #22c55e;
     display: flex;
     flex-direction: column;
-    z-index: 999;
+    z-index: 10; /* Obniżona warstwa, żeby gra ją przykryła */
 }
 
 .chat-header {
@@ -151,7 +152,7 @@ body {
     background: #000;
     border: 4px solid #a855f7;
     padding: 20px;
-    z-index: 9999;
+    z-index: 999999;
     color: #fff;
     width: 80%;
     max-width: 400px;
@@ -171,7 +172,7 @@ body {
     display: flex;
     justify-content: center;
     gap: 10px;
-    z-index: 1000;
+    z-index: 10000;
     padding: 0 10px;
 }
 
@@ -189,7 +190,6 @@ body {
     border-color: #facc15;
 }
 
-/* RESPONSYWNOŚĆ POD TABLETY */
 @media (max-width: 1024px) {
     .bottom-menu {
         flex-wrap: wrap;
