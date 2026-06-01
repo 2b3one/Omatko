@@ -1,429 +1,201 @@
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-
-* { box-sizing: border-box; }
+/* RESET I PODSTAWY */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Press Start 2P', monospace, sans-serif;
+}
 
 body {
-    margin: 0;
+    background-color: #1a1a1a;
     overflow: hidden;
-    font-family: 'Courier New', monospace;
-    background: #0a0a0a;
+    height: 100vh;
+    width: 100vw;
 }
 
+/* CANVAS DLA MINIGRY I CHMUR */
+#cloud-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 45vh;
+    z-index: 5;
+    pointer-events: auto;
+}
+
+/* SCENA BACKGROUND */
 .scene {
-    position: fixed;
-    top: -5vh; left: -5vw;
-    width: 110vw;
-    height: 110vh;
-    background-image: url('assets/tlo-lgc.jpg');
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: url('bg-grosz.png') no-repeat center bottom;
     background-size: cover;
-    background-position: center 20%;
-    transition: transform 0.1s linear;
     z-index: 1;
-    image-rendering: pixelated;
+    transition: transform 0.1s ease-out;
 }
 
-/* CHMURY PIXEL ART */
+/* KLASYCZNE CHMURY FALLBACK */
 .cloud {
     position: absolute;
-    width: 64px;
-    height: 32px;
-    background: 
-        linear-gradient(#fff 0 0) 8px 8px/16px 8px no-repeat,
-        linear-gradient(#fff 0 0) 0px 16px/32px 8px no-repeat,
-        linear-gradient(#fff 0 0) 16px 0px/32px 8px no-repeat,
-        linear-gradient(#fff 0 0) 40px 16px/24px 8px no-repeat;
-    opacity: 0.6;
+    background: rgba(255, 255, 255, 0.2);
     z-index: 2;
-    pointer-events: none;
-    image-rendering: pixelated;
-    animation: plynPixel 60s steps(60, end) infinite;
-}
-.cloud-1 { top: 8vh; scale: 2; }
-.cloud-2 { top: 15vh; scale: 2.5; animation-delay: -15s; animation-duration: 80s; }
-
-@keyframes plynPixel {
-    0% { left: -20vw; }
-    100% { left: 110vw; }
 }
 
-/* PRANIE MALUTKIE 16x16px */
+/* INTERAKTYWNE PRANIE */
 .pranie {
     position: absolute;
+    cursor: pointer;
     z-index: 3;
-    cursor: pointer;
-    image-rendering: pixelated;
-    transform-origin: top center;
-    animation: machajPixel 1.5s steps(6, end) infinite;
-    display: block;
-    filter: drop-shadow(1px 1px 0px rgba(0,0,0,0.8));
-    transition: scale 0.1s steps(2, end); /* pixelowy transition */
 }
-
-.pranie:hover {
-    filter: drop-shadow(0 0 4px #00ff88) brightness(1.2);
-    scale: 1.1; /* lekko większe na hover */
-}
-
-/* PO KLIKNIĘCIU - ZMNIEJSZA SIĘ */
-.pranie:active {
-    scale: 0.7; /* ZMNIEJSZA SIĘ */
-    filter: drop-shadow(0 0 8px #00ff88) 
-            drop-shadow(0 0 15px #00ff88) 
-            brightness(1.6);
-}
-
 .pranie.clicked {
-    scale: 0.75; /* ZOSTAJE MNIEJSZE */
-    filter: drop-shadow(0 0 6px #00ff88) 
-            drop-shadow(0 0 12px #00ff88) 
-            brightness(1.4);
-    animation: machajPixel 1.5s steps(6, end) infinite, 
-               kliknietePixel 0.4s steps(3, end);
+    animation: shake 0.5s ease-in-out infinite;
 }
 
-@keyframes kliknietePixel {
-    0% { scale: 1.0; }
-    50% { scale: 0.6; }
-    100% { scale: 0.75; }
+@keyframes shake {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(5deg); }
+    75% { transform: rotate(-5deg); }
+    100% { transform: rotate(0deg); }
 }
 
-/* KOSZULKA 16x16px */
-/* BROWAR TYSKIE 16x24px */
-.pranie-1 {
-    width: 32px; height: 48px;
-    background: 
-        /* KONTUR BUTELKI */
-        linear-gradient(#000 0 0) 10px 2px/12px 1px no-repeat,
-        linear-gradient(#000 0 0) 9px 3px/1px 36px no-repeat,
-        linear-gradient(#000 0 0) 22px 3px/1px 36px no-repeat,
-        linear-gradient(#000 0 0) 10px 39px/12px 1px no-repeat,
-        /* SZYJKA */
-        linear-gradient(#8b4513 0 0) 13px 3px/6px 6px no-repeat,
-        linear-gradient(#654321 0 0) 16px 3px/3px 6px no-repeat,
-        /* KAPSEL */
-        linear-gradient(#c0c0c0 0 0) 12px 2px/8px 2px no-repeat,
-        linear-gradient(#808080 0 0) 12px 4px/8px 1px no-repeat,
-        /* PIWO */
-        linear-gradient(#daa520 0 0) 10px 9px/12px 28px no-repeat,
-        linear-gradient(#b8860b 0 0) 16px 9px/6px 28px no-repeat,
-        /* PIANA */
-        linear-gradient(#fff 0 0) 10px 9px/12px 4px no-repeat,
-        linear-gradient(#f5f5f5 0 0) 10px 13px/12px 1px no-repeat,
-        /* ETYKIETA */
-        linear-gradient(#ff0000 0 0) 10px 20px/12px 8px no-repeat,
-        linear-gradient(#000 0 0) 10px 20px/12px 1px no-repeat,
-        linear-gradient(#000 0 0) 10px 27px/12px 1px no-repeat;
-    top: 25vh; 
-    right: 10vw;
-    scale: 0.5;
-}
-
-/* SPRAY LGC 16x24px */
-.pranie-2 {
-    width: 32px; height: 48px;
-    background:
-        /* KONTUR PUSZKI */
-        linear-gradient(#000 0 0) 8px 8px/16px 1px no-repeat,
-        linear-gradient(#000 0 0) 7px 9px/1px 28px no-repeat,
-        linear-gradient(#000 0 0) 24px 9px/1px 28px no-repeat,
-        linear-gradient(#000 0 0) 8px 37px/16px 1px no-repeat,
-        /* GÓRA PUSZKI */
-        linear-gradient(#c0c0c0 0 0) 12px 4px/8px 4px no-repeat,
-        linear-gradient(#808080 0 0) 12px 8px/8px 1px no-repeat,
-        /* DYSZA */
-        linear-gradient(#000 0 0) 14px 2px/4px 3px no-repeat,
-        linear-gradient(#ff0000 0 0) 15px 1px/2px 2px no-repeat,
-        /* KORPUS NIEBIESKI */
-        linear-gradient(#1e90ff 0 0) 8px 9px/16px 27px no-repeat,
-        linear-gradient(#1873cc 0 0) 16px 9px/8px 27px no-repeat,
-        /* NAPIS LGC */
-        linear-gradient(#fff 0 0) 10px 16px/1px 4px no-repeat,
-        linear-gradient(#fff 0 0) 10px 16px/4px 1px no-repeat,
-        linear-gradient(#fff 0 0) 10px 18px/4px 1px no-repeat,
-        linear-gradient(#fff 0 0) 13px 18px/1px 2px no-repeat,
-        linear-gradient(#fff 0 0) 16px 16px/4px 1px no-repeat,
-        linear-gradient(#fff 0 0) 16px 18px/1px 2px no-repeat,
-        linear-gradient(#fff 0 0) 19px 16px/1px 4px no-repeat,
-        /* CIENIOWANIE */
-        linear-gradient(rgba(0,0,0,0.3) 0 0) 8px 12px/16px 1px no-repeat,
-        linear-gradient(rgba(0,0,0,0.3) 0 0) 8px 24px/16px 1px no-repeat;
-    top: 38vh; 
-    right: 11vw;
-    scale: 0.5;
-    animation-delay: -0.3s;
-}
-
-/* MIKROFON 16x24px */
-.pranie-3 {
-    width: 32px; height: 48px;
-    background:
-        /* KONTUR GŁÓWKI */
-        linear-gradient(#000 0 0) 8px 4px/16px 1px no-repeat,
-        linear-gradient(#000 0 0) 7px 5px/1px 14px no-repeat,
-        linear-gradient(#000 0 0) 24px 5px/1px 14px no-repeat,
-        linear-gradient(#000 0 0) 8px 19px/16px 1px no-repeat,
-        /* SIATKA MIKROFONU */
-        linear-gradient(#4a4a4a 0 0) 8px 5px/16px 13px no-repeat,
-        linear-gradient(#2a2a2a 0 0) 8px 5px/1px 13px no-repeat,
-        linear-gradient(#2a2a2a 0 0) 11px 5px/1px 13px no-repeat,
-        linear-gradient(#2a2a2a 0 0) 14px 5px/1px 13px no-repeat,
-        linear-gradient(#2a2a2a 0 0) 17px 5px/1px 13px no-repeat,
-        linear-gradient(#2a2a2a 0 0) 20px 5px/1px 13px no-repeat,
-        linear-gradient(#2a2a2a 0 0) 23px 5px/1px 13px no-repeat,
-        linear-gradient(#2a2a2a 0 0) 8px 8px/16px 1px no-repeat,
-        linear-gradient(#2a2a2a 0 0) 8px 11px/16px 1px no-repeat,
-        linear-gradient(#2a2a2a 0 0) 8px 14px/16px 1px no-repeat,
-        linear-gradient(#2a2a2a 0 0) 8px 17px/16px 1px no-repeat,
-        /* RĄCZKA */
-        linear-gradient(#000 0 0) 14px 19px/1px 18px no-repeat,
-        linear-gradient(#000 0 0) 17px 19px/1px 18px no-repeat,
-        linear-gradient(#000 0 0) 14px 37px/4px 1px no-repeat,
-        linear-gradient(#1a1a1a 0 0) 15px 19px/2px 18px no-repeat,
-        /* DETAL RĄCZKI */
-        linear-gradient(#333 0 0) 15px 24px/2px 2px no-repeat,
-        linear-gradient(#333 0 0) 15px 30px/2px 2px no-repeat;
-    top: 52vh; 
-    right: 10vw;
-    scale: 0.5;
-    animation-delay: -0.6s;
-}
-
-/* PŁYTA WINYLOWA 20x20px */
-.pranie-4 {
-    width: 40px; height: 40px;
-    background:
-        /* KONTUR ZEWNĘTRZNY */
-        linear-gradient(#000 0 0) 2px 18px/36px 4px no-repeat,
-        linear-gradient(#000 0 0) 18px 2px/4px 36px no-repeat,
-        linear-gradient(#000 0 0) 6px 10px/28px 2px no-repeat,
-        linear-gradient(#000 0 0) 10px 6px/2px 28px no-repeat,
-        linear-gradient(#000 0 0) 28px 6px/2px 28px no-repeat,
-        linear-gradient(#000 0 0) 6px 28px/28px 2px no-repeat,
-        /* PŁYTA CZARNA */
-        radial-gradient(circle at center, #1a1a1a 0%, #000 70%),
-        linear-gradient(#0a0a0a 0 0) 2px 2px/36px 36px no-repeat,
-        /* ROWKI WINYLU */
-        radial-gradient(circle at center, transparent 30%, #2a2a2a 31%, transparent 32%, #2a2a2a 33%, transparent 34%, #2a2a2a 35%, transparent 36%),
-        /* ETYKIETA ŚRODEK */
-        radial-gradient(circle at center, #ff0000 0%, #cc0000 60%, #000 61%),
-        linear-gradient(#ff0000 0 0) 14px 14px/12px 12px no-repeat,
-        /* OTWÓR */
-        radial-gradient(circle at center, #000 0%, #000 100%),
-        linear-gradient(#000 0 0) 19px 19px/2px 2px no-repeat,
-        /* REFLEKS */
-        linear-gradient(rgba(255,255,255,0.2) 0 0) 8px 8px/6px 6px no-repeat;
-    top: 65vh; 
-    right: 11vw;
-    scale: 0.5;
-    animation-delay: -0.9s;
-    border-radius: 50%;
-}
-
-@keyframes machajPixel {
-    0% { transform: rotate(-20deg) translateX(-1px); }
-    16% { transform: rotate(15deg) translateX(2px); }
-    33% { transform: rotate(-12deg) translateX(-1px); }
-    50% { transform: rotate(18deg) translateX(2px); }
-    66% { transform: rotate(-15deg) translateX(-1px); }
-    83% { transform: rotate(10deg) translateX(1px); }
-    100% { transform: rotate(-20deg) translateX(-1px); }
-}
-
-/* MOBILE - JESZCZE MNIEJSZE */
-@media (max-width: 768px) {
-  .pranie { scale: 0.4; }
-  .pranie-1 { top: 28vh; right: 6vw; }
-  .pranie-2 { top: 40vh; right: 7vw; }
-  .pranie-3 { top: 53vh; right: 6vw; }
-  .pranie-4 { top: 66vh; right: 7vw; }
-  
-  .pranie:active { scale: 0.3; }
-  .pranie.clicked { scale: 0.35; }
-}
-
-/* MOCNA KLATKOWA ANIMACJA Z CIENIEM */
-@keyframes machajPixel {
-    0% { 
-        transform: rotate(-15deg) translateX(-3px) translateY(0px);
-        filter: drop-shadow(3px 5px 0px rgba(0,0,0,0.5));
-    }
-    20% { 
-        transform: rotate(10deg) translateX(4px) translateY(-2px);
-        filter: drop-shadow(1px 4px 0px rgba(0,0,0,0.4));
-    }
-    40% { 
-        transform: rotate(-8deg) translateX(-2px) translateY(1px);
-        filter: drop-shadow(3px 5px 0px rgba(0,0,0,0.5));
-    }
-    60% { 
-        transform: rotate(12deg) translateX(3px) translateY(-1px);
-        filter: drop-shadow(1px 3px 0px rgba(0,0,0,0.4));
-    }
-    80% { 
-        transform: rotate(-10deg) translateX(-2px) translateY(0px);
-        filter: drop-shadow(2px 4px 0px rgba(0,0,0,0.5));
-    }
-    100% { 
-        transform: rotate(-15deg) translateX(-3px) translateY(0px);
-        filter: drop-shadow(3px 5px 0px rgba(0,0,0,0.5));
-    }
-}
-
-/* MOBILE - WIĘKSZE PIXELE */
-@media (max-width: 768px) {
-  .pranie { scale: 1.2; }
-  .pranie-1 { top: 28vh; right: 10vw; }
-  .pranie-2 { top: 40vh; right: 12vw; }
-  .pranie-3 { top: 53vh; right: 11vw; }
-  .pranie-4 { top: 66vh; right: 12vw; }
-}
-
-@keyframes machajPixel {
-    0% { transform: rotate(-12deg) translateX(-2px); }
-    25% { transform: rotate(8deg) translateX(3px); }
-    50% { transform: rotate(-8deg) translateX(-2px); }
-    75% { transform: rotate(12deg) translateX(2px); }
-    100% { transform: rotate(-12deg) translateX(-2px); }
-}
-
-/* HOTSPOTY */
-.hotspot {
+/* POSTACIE */
+.char {
     position: absolute;
     cursor: pointer;
-    z-index: 6;
-    border-radius: 50%;
-    /* background: rgba(255,0,0,0.3); odkomentuj do testów */
-}
-.hotspot:hover {
-    filter: drop-shadow(0 0 15px #00ff88);
+    z-index: 4;
 }
 
-.capy-hotspot {
-    width: 10vw; height: 10vw;
-    max-width: 120px; max-height: 120px;
-    left: 20vw; top: 18vh;
-}
-
-.lgc-hotspot {
-    width: 14vw; height: 14vw;
-    max-width: 180px; max-height: 180px;
-    left: 50vw; top: 45vh;
-    transform: translate(-50%, -50%);
-}
-
-/* ANIMOWANA GĘBA LGC */
-.mouth {
+/* OKNO CZATU OKIENKOWEGO */
+.kapibara-chat {
     position: absolute;
-    width: 20px; height: 4px;
-    background: #1a0a0a;
-    z-index: 5;
-    left: 50vw; top: 52vh;
+    bottom: 90px;
+    left: 50%;
     transform: translateX(-50%);
-    image-rendering: pixelated;
-    opacity: 0;
-    pointer-events: none;
-}
-.mouth.talking {
-    opacity: 1;
-    animation: gadajPixel 0.3s steps(2, end) infinite;
-}
-
-@keyframes gadajPixel {
-    0%, 100% { height: 4px; }
-    50% { height: 12px; }
+    width: 90%;
+    max-width: 500px;
+    height: 350px;
+    background: #121212;
+    border: 4px solid #22c55e;
+    display: flex;
+    flex-direction: column;
+    z-index: 999;
 }
 
-/* POPUP */
+.chat-header {
+    background: #22c55e;
+    color: #000;
+    padding: 8px;
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+}
+
+.chat-window {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.msg {
+    padding: 8px;
+    border-radius: 4px;
+    max-width: 85%;
+    font-size: 11px;
+    line-height: 1.4;
+}
+.msg.bot { background: #1e293b; color: #22c55e; border-left: 4px solid #22c55e; }
+.msg.user { background: #22c55e; color: #000; align-self: flex-end; }
+
+.chat-input-area {
+    display: flex;
+    border-top: 4px solid #22c55e;
+}
+.chat-input-area input {
+    flex: 1;
+    background: #000;
+    color: #fff;
+    border: none;
+    padding: 10px;
+    font-size: 10px;
+}
+.chat-input-area button {
+    background: #22c55e;
+    color: #000;
+    border: none;
+    padding: 10px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#mouth.talking {
+    width: 20px;
+    height: 10px;
+    background: red;
+    animation: blink 0.2s infinite;
+}
+
+@keyframes blink {
+    50% { opacity: 0; }
+}
+
+/* POPUP NAGRODY */
 .popup {
     position: fixed;
-    top: 50%; left: 50%;
+    top: 50%;
+    left: 50%;
     transform: translate(-50%, -50%);
-    width: 85%; max-width: 520px;
-    background: rgba(10,10,10,0.95);
-    color: #00ff88;
-    padding: 25px;
-    border: 2px solid #00ff88;
-    display: none;
-    z-index: 10;
-}
-.popup h2 {
-    margin: 0 0 15px 0;
-    text-transform: uppercase;
-    font-family: 'Press Start 2P', cursive;
-    font-size: 16px;
-}
-.popup button {
-    margin-top: 20px; width: 100%; padding: 12px;
-    background: #00ff88; border: none; color: #000;
-    font-weight: bold; cursor: pointer; text-transform: uppercase;
-    font-family: 'Press Start 2P', cursive; font-size: 12px;
-}
-
-/* MENU */
-.menu {
-    position: fixed; bottom: 0; width: 100%; height: 70px;
-    background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
-    border-top: 2px solid #00ff88;
-    display: flex; justify-content: space-around; align-items: center;
-    z-index: 20;
-}
-.menu-item {
-    font-size: 14px; padding: 10px 15px; cursor: pointer;
-    transition: 0.2s; color: #00ff88; text-transform: uppercase;
-    font-weight: bold; font-family: 'Press Start 2P', cursive;
-}
-.menu-item:hover { background: #00ff88; color: #000; }
-
-/* CZAT LGC */
-.kapibara-chat {
-    position: fixed; bottom: 80px; right: 20px;
-    width: 340px; height: 450px;
-    background: #0a0a0a; border: 2px solid #00ff88;
-    display: none; flex-direction: column; overflow: hidden;
+    background: #000;
+    border: 4px solid #a855f7;
+    padding: 20px;
     z-index: 9999;
+    color: #fff;
+    width: 80%;
+    max-width: 400px;
 }
-.kapibara-chat-header {
-    background: #00ff88; padding: 12px; display: flex;
-    justify-content: space-between; color: #000; font-weight: bold;
-    font-family: 'Press Start 2P', cursive; font-size: 10px;
+.close-btn {
+    float: right;
+    cursor: pointer;
+    color: #ef4444;
 }
-.kapibara-chat-window {
-    flex: 1; padding: 12px; overflow-y: auto; background: #111;
-}
-.kapibara-chat-window::-webkit-scrollbar { width: 6px; }
-.kapibara-chat-window::-webkit-scrollbar-thumb { background: #00ff88; }
-.kapibara-chat-input { display: flex; border-top: 2px solid #00ff88; }
-.kapibara-chat-input input {
-    flex: 1; padding: 12px; background: #000; border: none;
-    color: #00ff88; font-family: 'Courier New', monospace; outline: none;
-}
-.kapibara-chat-input button {
-    padding: 0 20px; background: #00ff88; border: none;
-    color: #000; cursor: pointer; font-weight: bold;
-    font-family: 'Press Start 2P', cursive; font-size: 10px;
-}
-.msg {
-    max-width: 85%; padding: 8px 12px; margin: 8px 0;
-    font-size: 13px; line-height: 1.4; word-wrap: break-word;
-}
-.msg.bot { background: #1a1a1a; color: #00ff88; border-left: 3px solid #00ff88; }
-.msg.user { background: #00ff88; color: #000; margin-left: auto; font-weight: bold; }
 
-/* MOBILE */
-@media (max-width: 768px) {
-  .pranie { scale: 1.8; }
-  .pranie-1 { top: 28vh; right: 10vw; }
-  .pranie-2 { top: 40vh; right: 12vw; }
-  .pranie-3 { top: 53vh; right: 11vw; }
-  .pranie-4 { top: 66vh; right: 12vw; }
-    
-  .capy-hotspot { width: 18vw; height: 18vw; left: 18vw; top: 22vh; }
-  .lgc-hotspot { width: 25vw; height: 25vw; top: 48vh; }
-  .mouth { top: 55vh; scale: 1.5; }
-    
-  .menu { height: 60px; }
-  .menu-item { font-size: 8px; padding: 8px 5px; }
-  .kapibara-chat { width: 95vw; right: 2.5vw; height: 60vh; bottom: 70px; }
-  .popup { width: 95%; }
-  .popup h2 { font-size: 12px; }
+/* MENU NA DOLE */
+.bottom-menu {
+    position: absolute;
+    bottom: 10px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    z-index: 1000;
+    padding: 0 10px;
+}
+
+.bottom-menu button {
+    background: #334155;
+    color: #fff;
+    border: 3px solid #fff;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 10px;
+}
+
+.bottom-menu button.highlight-btn {
+    background: #a855f7;
+    border-color: #facc15;
+}
+
+/* RESPONSYWNOŚĆ POD TABLETY */
+@media (max-width: 1024px) {
+    .bottom-menu {
+        flex-wrap: wrap;
+    }
+    .bottom-menu button {
+        padding: 8px 12px;
+        font-size: 9px;
+    }
 }

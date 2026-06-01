@@ -3,54 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Osiedle Misja Kontakt - LGC</title>
+    <title>Ostatni Grosz - LGC Crew</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="scene" id="scene"></div>
+    <div class="scene" id="scene"></div>
 
-<canvas id="cloud-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 45vh; z-index: 2; pointer-events: none;"></canvas>
+    <canvas id="cloud-canvas"></canvas>
 
-<!-- INTERAKTYWNE ELEMENTY KLIKALNE (RETRO IKONY) -->
-<a href="https://youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" class="pranie pranie-1" title="Mikrofon Osiedlowy"></a>
-<a href="https://youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" class="pranie pranie-2" title="Płyta Winyl LGC"></a>
-<a href="https://youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" class="pranie pranie-3" title="Farba w Sprayu"></a>
-<a href="https://youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" class="pranie pranie-4" title="Deskorolka"></a>
+    <div class="cloud cloud-1"></div>
+    <div class="cloud cloud-2"></div>
 
+    <div class="pranie pranie-1"></div>
+    <div class="pranie pranie-2"></div>
 
-<div class="hotspot capy-hotspot" id="capy" title="Gadaj z kapibarą"></div>
-<div class="hotspot lgc-hotspot" id="lgc-face" title="Gadaj z LGC"></div>
-<div class="mouth" id="mouth"></div>
+    <div class="char" id="capy"></div>
+    <div class="char" id="lgc-face"></div>
 
-<div class="popup" id="popup">
-    <h2>Kroniki Częstochowy</h2>
-    <p id="story"></p>
-    <button onclick="closePopup()">Zamknij rewir</button>
-</div>
-
-<div class="menu">
-    <div class="menu-item" id="btn-start">Start</div>
-    <div class="menu-item" id="btn-mapa">Mapa</div>
-    <div class="menu-item" id="btn-misje">Misje</div>
-    <div class="menu-item" id="btn-postacie">Postacie</div>
-    <div class="menu-item" id="btn-kontakt">Kontakt</div>
-</div>
-
-<div class="kapibara-chat" id="kapibaraChat">
-    <div class="kapibara-chat-header">
-        <strong>LGC Crew Chat</strong>
-        <span id="closeChat">✖</span>
+    <div class="kapibara-chat" id="kapibaraChat" style="display: none;">
+        <div class="chat-header">
+            <span>LGC Crew Chat</span>
+            <span id="closeChat" style="cursor: pointer;">&times;</span>
+        </div>
+        <div class="chat-window" id="kapibaraChatWindow">
+            <div class="msg bot">Siema mordo! Jesteśmy z kapibarą na posterunku. Pilnujemy Grosza. O co kminisz?</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="kapibaraInput" placeholder="Napisz coś do LGC...">
+            <button id="kapibaraSend">Wyślij</button>
+        </div>
+        <div id="mouth"></div>
     </div>
-    <div class="kapibara-chat-window" id="kapibaraChatWindow">
-        <div class="msg bot">Siema mordo! Jesteśmy z kapibarą na posterunku. Pilnujemy Grosza. O co kminisz?</div>
-    </div>
-    <div class="kapibara-chat-input">
-        <input id="kapibaraInput" type="text" placeholder="Napisz coś do LGC..." autocomplete="off">
-        <button id="kapibaraSend">Wyślij</button>
-    </div>
-</div>
 
-<script src="agent.js"></script>
+    <div id="popup" class="popup" style="display: none;">
+        <div class="popup-content">
+            <span class="close-btn" onclick="window.closePopup()">&times;</span>
+            <p id="story"></p>
+        </div>
+    </div>
+
+    <div class="bottom-menu">
+        <button id="btn-start">Start</button>
+        <button id="btn-misje" class="highlight-btn">Misje</button>
+        <button id="btn-mapa">Mapa</button>
+        <button id="btn-postacie">Postacie</button>
+        <button id="btn-kontakt">Kontakt</button>
+    </div>
+
+    <script src="agent.js"></script>
 </body>
 </html>

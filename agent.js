@@ -1,15 +1,26 @@
+// OBSŁUGA INTERAKCJI Z PRANIEM
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('pranie')) {
+        document.querySelectorAll('.pranie').forEach(p => p.classList.remove('clicked'));
+        e.target.classList.add('clicked');
+        setTimeout(() => { e.target.classList.remove('clicked'); }, 3000);
+    }
+});
+
 document.addEventListener('DOMContentLoaded', () => {
-    
-    // ==========================================
-    // GLOBALNE ZMIENNE SILNIKA GRAFIKI I GRY
-    // ==========================================
+    console.log("LGC Engine & Game Initialized");
+
+    // Pobranie canvasu gry
     const canvas = document.getElementById('cloud-canvas');
-    if (!canvas) return; 
+    if (!canvas) {
+        console.error("BŁĄD GRAFICZNY: Canvas nie został znaleziony w dokumencie HTML.");
+        return; 
+    }
     
     const ctx = canvas.getContext('2d');
-    const PIXEL_SIZE = 4; // Rozmiar piksela gry
+    const PIXEL_SIZE = 4;
 
-    // Kolory chmur (Burzowy grafit)
+    // Paleta kolorów dla proceduralnych chmur pixelartowych
     const COLORS = {
         highlight: '#94a3b8',   
         base: '#475569',        
@@ -17,22 +28,22 @@ document.addEventListener('DOMContentLoaded', () => {
         shadowDark: '#1e293b'   
     };
 
-    // Stany gry
+    // Flagi stanów mechaniki gry
     let gameActive = false;
-    let gameState = "RUNNING"; // "RUNNING" lub "SPRAYING"
+    let gameState = "RUNNING"; // RUNNING lub SPRAYING
 
-    // Parametry gracza
-    let player = { x: 80, y: 0, w: 24, h: 48, vy: 0, isJumping: false, isDucking: false, duckTimer: 0 };
+    // Konfiguracja fizyki gracza
+    let player = { x: 80, y: 0, w: 24, h: 48, vy: 0, isJumping: false };
     let obstacles = [];
     let gameTimer = 0;
-    let requiredRunTime = 300; // Czas biegu (ok. 6-7 sekund dla płynności)
+    let requiredRunTime = 280; // Czas trwania ucieczki w klatkach (ok. 6-7 sekund)
     
-    // Parametry minigry graffiti
+    // Dane minigry bombingowej
     let spraySequence = [];
     let sprayIndex = 0;
     const keysPool = ['W', 'A', 'S', 'D'];
 
-    // Historie LGC
+    // Baza nagród fabularnych
     const stories = [
         "LGC powstało jak kable zwisały nad blokami w 98. Kapibara wybrała mnie.",
         "Heniek z garaży mówi że LGC to nie crew, to rodzina. Kapibara potwierdza.",
@@ -41,125 +52,93 @@ document.addEventListener('DOMContentLoaded', () => {
         "Żabka na dole? Płacimy groszem, bo to Ostatni Grosz. Kapibara ma zniżkę stałego klienta."
     ];
 
-    // Pobranie elementów HTML (Zabezpieczone przed błędami null)
+    // Cache elementów DOM
     const mouth = document.getElementById("mouth");
     const kapibaraChat = document.getElementById("kapibaraChat");
-    const chatWindow = document.getElementById("kapibaraChatWindow");
-    const input = document.getElementById("kapibaraInput");
-    const btnSend = document.getElementById("kapibaraSend");
+    const kapibaraChatWindow = document.getElementById("kapibaraChatWindow");
+    const kapibaraInput = document.getElementById("kapibaraInput");
+    const kapibaraSend = document.getElementById("kapibaraSend");
+    const closeChat = document.getElementById("closeChat");
 
-    // Dopasowanie rozmiaru płótna
+    // Skalowanie okna gry
     function resizeCanvas() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight * 0.45;
+        if (gameActive) {
+            player.y = (canvas.height - 50) - player.h;
+        }
     }
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
     // ==========================================
-    // GENERATOR CHMUR (TRYB PASYWNY)
+    // KLASA CHMUR PIXEL ART (TRYB PASYWNY)
     // ==========================================
     class DetailedPixelCloud {
         constructor(isInitial = false) {
             this.puffs = [];
             this.grid = {};
-            
             const puffCount = Math.floor(Math.random() * 4) + 4; 
             let currentX = 0;
-
             for (let i = 0; i < puffCount; i++) {
                 const radius = Math.floor(Math.random() * 6) + 4;
                 const heightOffset = Math.floor(Math.random() * 4) - 2;
-                this.puffs.push({
-                    cx: currentX + radius,
-                    cy: 12 + heightOffset,
-                    r: radius
-                });
+                this.puffs.push({ cx: currentX + radius, cy: 12 + heightOffset, r: radius });
                 currentX += Math.floor(radius * 1.3);
             }
-            
             this.width = currentX + 10;
             this.height = 30;
-            this.speed = Math.random() * 0.25 + 0.15;
+            this.speed = Math.random() * 0.20 + 0.10;
             this.x = isInitial ? (Math.random() * (canvas.width + this.width * PIXEL_SIZE) - this.width * PIXEL_SIZE) : -this.width * PIXEL_SIZE;
             this.y = Math.random() * (canvas.height - this.height * PIXEL_SIZE - 40) + 10;
             this.opacity = Math.random() * 0.15 + 0.80; 
-
             this.generatePixelMatrix();
         }
-
         generatePixelMatrix() {
             for (let x = 0; x < this.width; x++) {
                 for (let y = 0; y < this.height; y++) {
                     let inside = false;
-
                     for (let puff of this.puffs) {
-                        const dx = x - puff.cx;
-                        const dy = y - puff.cy;
-                        if (Math.sqrt(dx*dx + dy*dy) <= puff.r) {
-                            inside = true;
-                            break;
-                        }
+                        const dx = x - puff.cx; const dy = y - puff.cy;
+                        if (Math.sqrt(dx*dx + dy*dy) <= puff.r) { inside = true; break; }
                     }
-
-                    if (inside) {
-                        this.grid[`${x},${y}`] = { x, y };
-                    }
+                    if (inside) this.grid[`${x},${y}`] = { x, y };
                 }
             }
-
             for (let key in this.grid) {
                 const p = this.grid[key];
                 let columnPixels = Object.values(this.grid).filter(pt => pt.x === p.x);
                 let minY = Math.min(...columnPixels.map(pt => pt.y));
                 let maxY = Math.max(...columnPixels.map(pt => pt.y));
                 let colHeight = maxY - minY;
-                
                 let relativeY = (p.y - minY) / (colHeight || 1);
                 let finalColor = COLORS.base;
-
                 if (relativeY < 0.15) finalColor = COLORS.highlight;
                 else if (relativeY < 0.28) finalColor = ((p.x + p.y) % 2 === 0) ? COLORS.highlight : COLORS.base;
                 else if (relativeY < 0.55) finalColor = COLORS.base;
                 else if (relativeY < 0.68) finalColor = ((p.x + p.y) % 2 === 0) ? COLORS.base : COLORS.shadowLight;
                 else if (relativeY < 0.85) finalColor = COLORS.shadowLight;
                 else finalColor = COLORS.shadowDark;
-
                 p.color = finalColor;
             }
         }
-
-        update() {
-            this.x += this.speed;
-        }
-
+        update() { this.x += this.speed; }
         draw() {
-            ctx.save();
-            ctx.globalAlpha = this.opacity;
-            ctx.imageSmoothingEnabled = false;
-
+            ctx.save(); ctx.globalAlpha = this.opacity; ctx.imageSmoothingEnabled = false;
             for (let key in this.grid) {
                 const block = this.grid[key];
                 ctx.fillStyle = block.color;
-                ctx.fillRect(
-                    Math.round(this.x + block.x * PIXEL_SIZE), 
-                    Math.round(this.y + block.y * PIXEL_SIZE), 
-                    PIXEL_SIZE, 
-                    PIXEL_SIZE
-                );
+                ctx.fillRect(Math.round(this.x + block.x * PIXEL_SIZE), Math.round(this.y + block.y * PIXEL_SIZE), PIXEL_SIZE, PIXEL_SIZE);
             }
             ctx.restore();
         }
     }
 
-    const cloudCount = 4;
     let clouds = [];
-    for (let i = 0; i < cloudCount; i++) {
-        clouds.push(new DetailedPixelCloud(true));
-    }
+    for (let i = 0; i < 4; i++) clouds.push(new DetailedPixelCloud(true));
 
     // ==========================================
-    // LOGIKA URUCHAMIANIA MINIGRY GRAFFITI
+    // URUCHOMIENIE SILNIKA GRY RUNNERA
     // ==========================================
     function startGraffitiGame() {
         if (kapibaraChat) kapibaraChat.style.display = "none";
@@ -170,26 +149,28 @@ document.addEventListener('DOMContentLoaded', () => {
         gameState = "RUNNING";
         gameTimer = 0;
         obstacles = [];
-        player.y = canvas.height - 90; 
+        
+        const groundY = canvas.height - 50;
+        player.y = groundY - player.h; 
         player.vy = 0;
         player.isJumping = false;
-        player.isDucking = false;
         
         setTimeout(() => {
             if (kapibaraChat) kapibaraChat.style.display = "flex";
-            addMsg("SYSTEM: Wjechałeś w tunele na Groszu... SOK-iści depczą po piętach! Biegnij! [Strzałka w Górę = Skok, Strzałka w Dół = Wślizg]", "bot");
-        }, 200);
+            kapibaraAddMsg("SYSTEM: Wjechałeś w tunele na Groszu... SOK-iści depczą po piętach! Biegnij! [Tapnij w grę / Strzałka w Górę = Skok]", "bot");
+        }, 350);
     }
 
     function spawnObstacle() {
-        if (gameState !== "RUNNING" || Math.random() > 0.02 || obstacles.length > 2) return;
-        
+        if (gameState !== "RUNNING" || Math.random() > 0.025 || obstacles.length > 1) return;
+        const groundY = canvas.height - 50;
         let isTrain = Math.random() > 0.4; 
+        
         obstacles.push({
-            x: canvas.width + 50,
-            y: isTrain ? canvas.height - 90 : canvas.height - 130,
-            w: isTrain ? 60 : 35,
-            h: isTrain ? 40 : 12,
+            x: canvas.width + 60,
+            y: isTrain ? groundY - 38 : groundY - 70,
+            w: isTrain ? 55 : 30,
+            h: isTrain ? 38 : 10,
             type: isTrain ? "TRAIN" : "CABLE",
             color: isTrain ? "#1e3a8a" : "#facc15" 
         });
@@ -199,192 +180,140 @@ document.addEventListener('DOMContentLoaded', () => {
         gameState = "SPRAYING";
         spraySequence = [];
         sprayIndex = 0;
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 5; i++) {
             spraySequence.push(keysPool[Math.floor(Math.random() * keysPool.length)]);
         }
-        addMsg("LGC: Jesteś na miejscu! Szybko wrzucaj panel! Wklepuj na klawiaturze litery z ekranu!", "bot");
+        kapibaraAddMsg("LGC: Jesteś na miejscu! (Wersja mobilna maluje automatycznie... potrzymaj chwilę!)", "bot");
     }
 
-    // ==========================================
-    // GŁÓWNA PĘTLA RENDEROWANIA (ANIMATE)
-    // ==========================================
+    // GŁÓWNA PĘTLA GRAFICZNA
     function animate() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         if (!gameActive) {
-            // TRYB CHMUR
+            // RENDER PASYWNYCH CHMUR
             clouds.forEach((cloud, index) => {
                 cloud.update();
                 cloud.draw();
-                if (cloud.x > canvas.width) {
-                    clouds[index] = new DetailedPixelCloud(false);
-                }
+                if (cloud.x > canvas.width) clouds[index] = new DetailedPixelCloud(false);
             });
         } else {
-            // TRYB GRAFFITI RUNNER
+            // RENDER AKTYWNEJ ROZGRYWKI
             const groundY = canvas.height - 50;
 
             ctx.fillStyle = "#0f172a"; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
             ctx.fillStyle = "#475569";
             ctx.fillRect(0, groundY, canvas.width, 8);
-            ctx.fillStyle = "#334155";
-            ctx.fillRect(0, groundY + 15, canvas.width, 6);
 
             if (gameState === "RUNNING") {
                 gameTimer++;
                 
-                // Fizyka
+                // Grawitacja i ruch gracza
                 player.y += player.vy;
                 if (player.y < groundY - player.h) {
-                    player.vy += 0.6; 
+                    player.vy += 0.65; 
                 } else {
                     player.y = groundY - player.h;
                     player.vy = 0;
                     player.isJumping = false;
                 }
 
-                if (player.isDucking) {
-                    player.duckTimer--;
-                    if (player.duckTimer <= 0) player.isDucking = false;
-                }
-
-                // Gracz
+                // Rysowanie gracza (Pixel art bloczek)
                 ctx.fillStyle = "#ec4899"; 
-                let currentH = player.isDucking ? player.h / 2 : player.h;
-                let currentY = player.isDucking ? player.y + player.h / 2 : player.y;
-                ctx.fillRect(player.x, currentY, player.w, currentH);
-                ctx.strokeStyle = "#000000";
+                ctx.fillRect(player.x, player.y, player.w, player.h);
+                ctx.strokeStyle = "#000";
                 ctx.lineWidth = 3;
-                ctx.strokeRect(player.x, currentY, player.w, currentH);
+                ctx.strokeRect(player.x, player.y, player.w, player.h);
                 
+                // Daszek czapki grafficiarza
                 ctx.fillStyle = "#facc15";
-                ctx.fillRect(player.x - 4, currentY, player.w + 6, 8);
+                ctx.fillRect(player.x - 4, player.y, player.w + 6, 8);
 
                 spawnObstacle();
 
-                // Ruch i filtrowanie (BEZPIECZNE USUNIĘCIE BEZ ZAPĘTLENIA)
+                // Obsługa przeszkód
                 obstacles.forEach((obs) => {
-                    obs.x -= 6; 
-                    
+                    obs.x -= 6.5; 
                     ctx.fillStyle = obs.color;
                     ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-                    ctx.strokeStyle = "#000000";
-                    ctx.lineWidth = 3;
                     ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
 
-                    if (obs.type === "TRAIN") {
-                        ctx.fillStyle = "#67e8f9";
-                        ctx.fillRect(obs.x + 8, obs.y + 8, 12, 10);
-                        ctx.fillRect(obs.x + 28, obs.y + 8, 12, 10);
-                    }
-
-                    // Kolizje
+                    // Detekcja Kolizji AABB
                     if (player.x < obs.x + obs.w && player.x + player.w > obs.x &&
-                        currentY < obs.y + obs.h && currentY + currentH > obs.y) {
+                        player.y < obs.y + obs.h && player.y + player.h > obs.y) {
                             gameActive = false;
                             if (kapibaraChat) kapibaraChat.style.display = "flex";
-                            addMsg("SOK: Stój policja! Złapali Cię... Kliknij ponownie 'Misje', żeby spróbować jeszcze raz.", "bot");
+                            kapibaraAddMsg("SOK: Stój policja! Złapali Cię... Kliknij ponownie 'Misje', żeby spróbować jeszcze raz.", "bot");
                     }
                 });
 
-                // Usuwamy przeszkody, które wyleciały poza ekran po zakończeniu iteracji
+                // BEZPIECZNE FILTROWANIE TABLICY
                 obstacles = obstacles.filter(obs => obs.x > -100);
 
-                if (gameTimer > requiredRunTime) {
-                    initSpraySequence();
-                }
+                if (gameTimer > requiredRunTime) initSpraySequence();
 
-                // HUD progresu
-                ctx.fillStyle = "#1e293b";
-                ctx.fillRect(20, 20, canvas.width - 40, 10);
-                ctx.fillStyle = "#22c55e";
-                ctx.fillRect(20, 20, ((gameTimer / requiredRunTime) * (canvas.width - 40)), 10);
+                // HUD Paska postępu ucieczki
+                ctx.fillStyle = "#1e293b"; ctx.fillRect(20, 15, canvas.width - 40, 8);
+                ctx.fillStyle = "#22c55e"; ctx.fillRect(20, 15, ((gameTimer / requiredRunTime) * (canvas.width - 40)), 8);
 
-            } 
-            else if (gameState === "SPRAYING") {
-                ctx.fillStyle = "#334155"; 
-                ctx.fillRect(40, 40, canvas.width - 80, canvas.height - 100);
-                ctx.strokeStyle = "#000";
-                ctx.lineWidth = 5;
-                ctx.strokeRect(40, 40, canvas.width - 80, canvas.height - 100);
-
-                ctx.font = "bold 24px monospace";
-                ctx.fillStyle = "rgba(0,0,0,0.2)";
-                ctx.fillText("LAST GROSZ CREW", canvas.width/2 - 140, canvas.height/2 - 10);
+            } else if (gameState === "SPRAYING") {
+                // EKRAN BOMBINGU PANELU
+                ctx.fillStyle = "#334155"; ctx.fillRect(30, 20, canvas.width - 60, canvas.height - 40);
+                ctx.strokeStyle = "#fff"; ctx.strokeRect(30, 20, canvas.width - 60, canvas.height - 40);
                 
-                ctx.fillStyle = "#a855f7"; 
-                ctx.fillText("LAST GROSZ CREW".substring(0, sprayIndex * 3), canvas.width/2 - 140, canvas.height/2 - 10);
-
-                ctx.fillStyle = "#ffffff";
-                ctx.font = "14px monospace";
-                ctx.fillText("WSTUKAJ KOD GRAFFITI:", canvas.width/2 - 100, canvas.height/2 + 30);
-
-                for (let i = 0; i < spraySequence.length; i++) {
-                    let isDone = i < sprayIndex;
-                    ctx.fillStyle = isDone ? "#22c55e" : "#ef4444";
-                    ctx.fillRect(canvas.width/2 - 110 + (i * 38), canvas.height/2 + 50, 28, 28);
-                    ctx.strokeStyle = "#000";
-                    ctx.strokeRect(canvas.width/2 - 110 + (i * 38), canvas.height/2 + 50, 28, 28);
-
-                    ctx.fillStyle = "#fff";
-                    ctx.font = "12px monospace";
-                    ctx.fillText(spraySequence[i], canvas.width/2 - 101 + (i * 38), canvas.height/2 + 69);
-                }
+                ctx.fillStyle = "#fff"; ctx.font = "bold 14px monospace";
+                ctx.fillText("BOMBING PANELU LGC W TOKU...", canvas.width/2 - 110, canvas.height/2);
+                
+                // Zamknięcie misji z sukcesem
+                setTimeout(() => {
+                    if (gameActive && gameState === "SPRAYING") {
+                        gameActive = false;
+                        if (kapibaraChat) kapibaraChat.style.display = "flex";
+                        kapibaraAddMsg("Mordo! Panel LGC skończony! Cały skład zmalowany w dziki wildstyle. Akcja czysta!", "bot");
+                        
+                        setTimeout(() => {
+                            const popup = document.getElementById("popup");
+                            const story = document.getElementById("story");
+                            if (popup && story) {
+                                popup.style.display = "block";
+                                story.innerText = "MISJA ZALICZONA! " + stories[Math.floor(Math.random() * stories.length)];
+                            }
+                        }, 1200);
+                    }
+                }, 2000);
             }
         }
         requestAnimationFrame(animate);
     }
     animate();
 
-    // ==========================================
-    // STEROWANIE KLAWIATURĄ
-    // ==========================================
+    // SYSTEM SKOKU POD TABLETY (DOTYK W CANVAS)
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (gameActive && gameState === "RUNNING" && !player.isJumping) {
+            player.vy = -12.5;
+            player.isJumping = true;
+        }
+    }, { passive: false });
+
+    // SYSTEM SKOKU POD KLAWIATURY (PC)
     window.addEventListener('keydown', (e) => {
         if (!gameActive) return;
-
         if (gameState === "RUNNING") {
-            if ((e.key === "ArrowUp" || e.key === "w" || e.key === " ") && !player.isJumping && !player.isDucking) {
-                player.vy = -12; 
-                player.isJumping = true;
-            }
-            if ((e.key === "ArrowDown" || e.key === "s") && !player.isJumping) {
-                player.isDucking = true;
-                player.duckTimer = 22; 
-            }
-        } 
-        else if (gameState === "SPRAYING") {
-            let pressedKey = e.key.toUpperCase();
-            if (pressedKey === spraySequence[sprayIndex]) {
-                sprayIndex++;
-                if (sprayIndex >= spraySequence.length) {
-                    gameActive = false;
-                    if (kapibaraChat) kapibaraChat.style.display = "flex";
-                    addMsg("Mordo! Panel LGC skończony! Cały skład zmalowany w gruby wildstyle. Akcja idealna!", "bot");
-                    
-                    setTimeout(() => {
-                        const popup = document.getElementById("popup");
-                        const story = document.getElementById("story");
-                        if (popup && story) {
-                            popup.style.display = "block";
-                            story.innerText = "MISJA ZALICZONA! " + stories[Math.floor(Math.random() * stories.length)];
-                        }
-                    }, 1500);
-                }
-            } else if (keysPool.includes(pressedKey)) {
-                if (sprayIndex > 0) sprayIndex--;
+            if ((e.key === "ArrowUp" || e.key === "w" || e.key === " ") && !player.isJumping) {
+                player.vy = -12.5; player.isJumping = true;
             }
         }
     });
 
     // ==========================================
-    // OBSŁUGA MENU
+    // CZAT I OBSŁUGA POZOSTAŁYCH PRZYCISKÓW MENU
     // ==========================================
     function openChat() {
         if (kapibaraChat) {
             kapibaraChat.style.display = "flex";
-            if (input) input.focus();
+            if (kapibaraInput) kapibaraInput.focus();
         }
     }
 
@@ -392,83 +321,62 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnMisje) {
         btnMisje.onclick = (e) => {
             e.preventDefault();
-            e.stopPropagation(); 
             startGraffitiGame();
         };
     }
+
+    const capyEl = document.getElementById("capy");
+    if (capyEl) { capyEl.onclick = openChat; }
+
+    const lgcEl = document.getElementById("lgc-face");
+    if (lgcEl) { lgcEl.onclick = openChat; }
+
+    if (closeChat) { closeChat.onclick = () => kapibaraChat.style.display = "none"; }
 
     window.closePopup = () => {
         const popup = document.getElementById("popup");
         if (popup) popup.style.display = "none";
     };
 
-    const capy = document.getElementById("capy");
-    const lgcFace = document.getElementById("lgc-face");
-    const closeChat = document.getElementById("closeChat");
-
-    if (capy) capy.onclick = openChat;
-    if (lgcFace) lgcFace.onclick = openChat;
-    if (closeChat) closeChat.onclick = () => { if (kapibaraChat) kapibaraChat.style.display = "none"; };
-
-    const btnStart = document.getElementById("btn-start");
-    if (btnStart) btnStart.onclick = () => { openChat(); addMsg("Wkrótce nowe misje na Groszu.", "bot"); };
-
-    const btnMapa = document.getElementById("btn-mapa");
-    if (btnMapa) btnMapa.onclick = () => { openChat(); addMsg("Mapa – tylko wtajemniczeni znają skróty między blokami.", "bot"); };
-
-    const btnPostacie = document.getElementById("btn-postacie");
-    if (btnPostacie) btnPostacie.onclick = () => { openChat(); addMsg("Heniek, LGC, Kapibara. Reszta to tło.", "bot"); };
-
-    const btnKontakt = document.getElementById("btn-kontakt");
-    if (btnKontakt) btnKontakt.onclick = () => { openChat(); addMsg("Kontakt: LGC nie odbiera nieznanych numerów.", "bot"); };
-
-    function addMsg(text, sender = "user") {
-        if (!chatWindow) return;
+    function kapibaraAddMsg(text, sender="bot") {
+        if (!kapibaraChatWindow) return;
         const div = document.createElement("div");
         div.className = `msg ${sender}`;
         div.innerText = text;
-        chatWindow.appendChild(div);
-        chatWindow.scrollTop = chatWindow.scrollHeight;
-
+        kapibaraChatWindow.appendChild(div);
+        kapibaraChatWindow.scrollTop = kapibaraChatWindow.scrollHeight;
+        
         if (sender === "bot" && mouth) {
             mouth.classList.add("talking");
-            setTimeout(() => mouth.classList.remove("talking"), Math.min(text.length * 60, 2500));
+            setTimeout(() => mouth.classList.remove("talking"), 1400);
         }
     }
 
-    if (btnSend) {
-        btnSend.onclick = () => {
-            if (!input) return;
-            const txt = input.value.trim();
-            if (!txt) return;
-            addMsg(txt, "user");
-            input.value = "";
-
+    if (kapibaraSend) {
+        kapibaraSend.onclick = () => {
+            const text = kapibaraInput.value.trim();
+            if (!text) return;
+            kapibaraAddMsg(text, "user");
+            kapibaraInput.value = "";
+            
             setTimeout(() => {
-                let reply = "Nie wszystko mogę mówić na głos, wiesz jak jest. Zapytaj o LGC, Grosz, bloki albo legendy.";
-                const m = txt.toLowerCase();
-                if (m.includes("lgc")) reply = "LGC - Last Grosz Crew. Kapibara dołączyła pierwsza, ja drugi.";
-                if (m.includes("kapibara")) reply = "Tak, to ona. Najbardziej osiedlowa kapibara w Polsce. LGC certified.";
-                if (m.includes("grosz") || m.includes("osiedle")) reply = "Ostatni Grosz to labirynt bloków i garaży. Jak nie jesteś stąd, to się zgubisz.";
+                let reply = "Zapytaj mnie o LGC, Grosz, pociągi albo osiedlowe legendy.";
+                const m = text.toLowerCase();
+                if (m.includes("lgc")) reply = "LGC - Last Grosz Crew. Malujemy panele tam, gdzie SOK nie sięga.";
+                if (m.includes("grosz") || m.includes("osiedle")) reply = "Ostatni Grosz ma swój klimat. Tunele kolejowe to nasze drugie podwórko.";
                 if (m.includes("legenda") || m.includes("historia")) reply = stories[Math.floor(Math.random() * stories.length)];
-                
-                addMsg(reply, "bot");
+                kapibaraAddMsg(reply, "bot");
             }, 400);
         };
     }
 
-    if (input) {
-        input.addEventListener("keydown", (e) => { if (e.key === "Enter") btnSend.click(); });
+    if (kapibaraInput) {
+        kapibaraInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); kapibaraSend.click(); } });
     }
 
-    // Parallax
-    document.addEventListener('mousemove', (e) => {
-        if (window.innerWidth < 768) return;
-        const scene = document.getElementById("scene");
-        if (scene) {
-            const x = (e.clientX / window.innerWidth - 0.5) * 20;
-            const y = (e.clientY / window.innerHeight - 0.5) * 20;
-            scene.style.transform = `translate(${x}px, ${y}px) scale(1.04)`;
-        }
-    });
+    // Przypisania akcji pod pozostałe przyciski dolnego panelu menu
+    document.getElementById("btn-start").onclick = () => { openChat(); kapibaraAddMsg("SYSTEM: Witamy na Groszu. Gotowy na akcję?", "bot"); };
+    document.getElementById("btn-mapa").onclick = () => { openChat(); kapibaraAddMsg("MAPA: Tunele i skróty między bocznicami Częstochowa-Raków są zablokowane dla obcych.", "bot"); };
+    document.getElementById("btn-postacie").onclick = () => { openChat(); kapibaraAddMsg("SKŁAD: Ty (Writer), Heniek z garaży oraz Kapibara LGC Certified.", "bot"); };
+    document.getElementById("btn-kontakt").onclick = () => { openChat(); kapibaraAddMsg("KONTAKT: Zostaw wrzut na pociągu, sami Cię znajdziemy.", "bot"); };
 });
