@@ -24,9 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Parametry gracza
     let player = { x: 80, y: 0, w: 24, h: 48, vy: 0, isJumping: false, isDucking: false, duckTimer: 0 };
     let obstacles = [];
-    let gameScore = 0;
     let gameTimer = 0;
-    let requiredRunTime = 400; // Czas biegu do pociągu (ok. 8-10 sekund)
+    let requiredRunTime = 300; // Czas biegu (ok. 6-7 sekund dla płynności)
     
     // Parametry minigry graffiti
     let spraySequence = [];
@@ -41,6 +40,13 @@ document.addEventListener('DOMContentLoaded', () => {
         "46 jeździ rzadko, ale kapibara zawsze zdąży. Mamy swoje skróty między blokami.",
         "Żabka na dole? Płacimy groszem, bo to Ostatni Grosz. Kapibara ma zniżkę stałego klienta."
     ];
+
+    // Pobranie elementów HTML (Zabezpieczone przed błędami null)
+    const mouth = document.getElementById("mouth");
+    const kapibaraChat = document.getElementById("kapibaraChat");
+    const chatWindow = document.getElementById("kapibaraChatWindow");
+    const input = document.getElementById("kapibaraInput");
+    const btnSend = document.getElementById("kapibaraSend");
 
     // Dopasowanie rozmiaru płótna
     function resizeCanvas() {
@@ -86,25 +92,18 @@ document.addEventListener('DOMContentLoaded', () => {
             for (let x = 0; x < this.width; x++) {
                 for (let y = 0; y < this.height; y++) {
                     let inside = false;
-                    let minDistToTop = 999;
-                    let minDistToBottom = 999;
 
                     for (let puff of this.puffs) {
                         const dx = x - puff.cx;
                         const dy = y - puff.cy;
-                        const dist = Math.sqrt(dx*dx + dy*dy);
-                        
-                        if (dist <= puff.r) {
+                        if (Math.sqrt(dx*dx + dy*dy) <= puff.r) {
                             inside = true;
-                            let distTop = puff.r - (puff.cy - y);
-                            let distBottom = puff.r - (y - puff.cy);
-                            if (distTop < minDistToTop) minDistToTop = distTop;
-                            if (distBottom < minDistToBottom) minDistToBottom = distBottom;
+                            break;
                         }
                     }
 
                     if (inside) {
-                        this.grid[`${x},${y}`] = { x, y, rawTop: minDistToTop, rawBottom: minDistToBottom };
+                        this.grid[`${x},${y}`] = { x, y };
                     }
                 }
             }
@@ -119,19 +118,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 let relativeY = (p.y - minY) / (colHeight || 1);
                 let finalColor = COLORS.base;
 
-                if (relativeY < 0.15) {
-                    finalColor = COLORS.highlight;
-                } else if (relativeY >= 0.15 && relativeY < 0.28) {
-                    finalColor = ((p.x + p.y) % 2 === 0) ? COLORS.highlight : COLORS.base;
-                } else if (relativeY >= 0.28 && relativeY < 0.55) {
-                    finalColor = COLORS.base;
-                } else if (relativeY >= 0.55 && relativeY < 0.68) {
-                    finalColor = ((p.x + p.y) % 2 === 0) ? COLORS.base : COLORS.shadowLight;
-                } else if (relativeY >= 0.68 && relativeY < 0.85) {
-                    finalColor = COLORS.shadowLight;
-                } else {
-                    finalColor = COLORS.shadowDark;
-                }
+                if (relativeY < 0.15) finalColor = COLORS.highlight;
+                else if (relativeY < 0.28) finalColor = ((p.x + p.y) % 2 === 0) ? COLORS.highlight : COLORS.base;
+                else if (relativeY < 0.55) finalColor = COLORS.base;
+                else if (relativeY < 0.68) finalColor = ((p.x + p.y) % 2 === 0) ? COLORS.base : COLORS.shadowLight;
+                else if (relativeY < 0.85) finalColor = COLORS.shadowLight;
+                else finalColor = COLORS.shadowDark;
 
                 p.color = finalColor;
             }
@@ -160,7 +152,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Inicjalizacja floty chmur
     const cloudCount = 4;
     let clouds = [];
     for (let i = 0; i < cloudCount; i++) {
@@ -171,14 +162,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // LOGIKA URUCHAMIANIA MINIGRY GRAFFITI
     // ==========================================
     function startGraffitiGame() {
-        // Chowamy okno czatu i popup, żeby nie zasłaniały widoku tunelu
         if (kapibaraChat) kapibaraChat.style.display = "none";
         const popup = document.getElementById("popup");
         if (popup) popup.style.display = "none";
 
         gameActive = true;
         gameState = "RUNNING";
-        gameScore = 0;
         gameTimer = 0;
         obstacles = [];
         player.y = canvas.height - 90; 
@@ -186,22 +175,21 @@ document.addEventListener('DOMContentLoaded', () => {
         player.isJumping = false;
         player.isDucking = false;
         
-        // Odpalamy powiadomienie na czacie dopiero po wejściu w tunel
         setTimeout(() => {
             if (kapibaraChat) kapibaraChat.style.display = "flex";
             addMsg("SYSTEM: Wjechałeś w tunele na Groszu... SOK-iści depczą po piętach! Biegnij! [Strzałka w Górę = Skok, Strzałka w Dół = Wślizg]", "bot");
-        }, 300);
+        }, 200);
     }
 
     function spawnObstacle() {
-        if (gameState !== "RUNNING" || Math.random() > 0.03 || obstacles.length > 2) return;
+        if (gameState !== "RUNNING" || Math.random() > 0.02 || obstacles.length > 2) return;
         
         let isTrain = Math.random() > 0.4; 
         obstacles.push({
             x: canvas.width + 50,
-            y: isTrain ? canvas.height - 90 : canvas.height - 140,
-            w: isTrain ? 60 : 30,
-            h: isTrain ? 40 : 15,
+            y: isTrain ? canvas.height - 90 : canvas.height - 130,
+            w: isTrain ? 60 : 35,
+            h: isTrain ? 40 : 12,
             type: isTrain ? "TRAIN" : "CABLE",
             color: isTrain ? "#1e3a8a" : "#facc15" 
         });
@@ -247,6 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (gameState === "RUNNING") {
                 gameTimer++;
                 
+                // Fizyka
                 player.y += player.vy;
                 if (player.y < groundY - player.h) {
                     player.vy += 0.6; 
@@ -261,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (player.duckTimer <= 0) player.isDucking = false;
                 }
 
-                // Rysowanie gracza
+                // Gracz
                 ctx.fillStyle = "#ec4899"; 
                 let currentH = player.isDucking ? player.h / 2 : player.h;
                 let currentY = player.isDucking ? player.y + player.h / 2 : player.y;
@@ -274,8 +263,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.fillRect(player.x - 4, currentY, player.w + 6, 8);
 
                 spawnObstacle();
-                obstacles.forEach((obs, index) => {
-                    obs.x -= 5.5; 
+
+                // Ruch i filtrowanie (BEZPIECZNE USUNIĘCIE BEZ ZAPĘTLENIA)
+                obstacles.forEach((obs) => {
+                    obs.x -= 6; 
                     
                     ctx.fillStyle = obs.color;
                     ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
@@ -289,23 +280,23 @@ document.addEventListener('DOMContentLoaded', () => {
                         ctx.fillRect(obs.x + 28, obs.y + 8, 12, 10);
                     }
 
-                    // Kolizja
-                    let pY = currentY;
-                    let pH = currentH;
+                    // Kolizje
                     if (player.x < obs.x + obs.w && player.x + player.w > obs.x &&
-                        pY < obs.y + obs.h && pY + pH > obs.y) {
+                        currentY < obs.y + obs.h && currentY + currentH > obs.y) {
                             gameActive = false;
                             if (kapibaraChat) kapibaraChat.style.display = "flex";
                             addMsg("SOK: Stój policja! Złapali Cię... Kliknij ponownie 'Misje', żeby spróbować jeszcze raz.", "bot");
                     }
-
-                    if (obs.x < -100) obstacles.splice(index, 1);
                 });
+
+                // Usuwamy przeszkody, które wyleciały poza ekran po zakończeniu iteracji
+                obstacles = obstacles.filter(obs => obs.x > -100);
 
                 if (gameTimer > requiredRunTime) {
                     initSpraySequence();
                 }
 
+                // HUD progresu
                 ctx.fillStyle = "#1e293b";
                 ctx.fillRect(20, 20, canvas.width - 40, 10);
                 ctx.fillStyle = "#22c55e";
@@ -360,7 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if ((e.key === "ArrowDown" || e.key === "s") && !player.isJumping) {
                 player.isDucking = true;
-                player.duckTimer = 25; 
+                player.duckTimer = 22; 
             }
         } 
         else if (gameState === "SPRAYING") {
@@ -388,28 +379,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ==========================================
-    // OBSŁUGA DOLNEGO MENU (ODSEPAROWANA)
+    // OBSŁUGA MENU
     // ==========================================
-    const btnMisje = document.getElementById("btn-misje");
-    if (btnMisje) {
-        btnMisje.onclick = (e) => {
-            e.preventDefault();
-            e.stopPropagation(); // Zatrzymujemy bąbelkowanie kliknięcia do okna czatu
-            startGraffitiGame();
-        };
-    }
-
-    const mouth = document.getElementById("mouth");
-    const kapibaraChat = document.getElementById("kapibaraChat");
-    const chatWindow = document.getElementById("kapibaraChatWindow");
-    const input = document.getElementById("kapibaraInput");
-    const btnSend = document.getElementById("kapibaraSend");
-
     function openChat() {
         if (kapibaraChat) {
             kapibaraChat.style.display = "flex";
             if (input) input.focus();
         }
+    }
+
+    const btnMisje = document.getElementById("btn-misje");
+    if (btnMisje) {
+        btnMisje.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation(); 
+            startGraffitiGame();
+        };
     }
 
     window.closePopup = () => {
@@ -476,6 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
         input.addEventListener("keydown", (e) => { if (e.key === "Enter") btnSend.click(); });
     }
 
+    // Parallax
     document.addEventListener('mousemove', (e) => {
         if (window.innerWidth < 768) return;
         const scene = document.getElementById("scene");
@@ -483,14 +469,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const x = (e.clientX / window.innerWidth - 0.5) * 20;
             const y = (e.clientY / window.innerHeight - 0.5) * 20;
             scene.style.transform = `translate(${x}px, ${y}px) scale(1.04)`;
-        }
-    });
-
-    document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('pranie')) {
-            document.querySelectorAll('.pranie').forEach(p => p.classList.remove('clicked'));
-            e.target.classList.add('clicked');
-            setTimeout(() => e.target.classList.remove('clicked'), 3000);
         }
     });
 });
